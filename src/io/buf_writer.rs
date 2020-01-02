@@ -4,7 +4,7 @@ use std::pin::Pin;
 use pin_project_lite::pin_project;
 
 use crate::io::write::WriteExt;
-use crate::io::{self, Seek, SeekFrom, Write, DEFAULT_BUF_SIZE};
+use crate::io::{self, Seek, SeekFrom, Read, Write, DEFAULT_BUF_SIZE};
 use crate::task::{Context, Poll, ready};
 
 pin_project! {
@@ -346,5 +346,15 @@ impl<W: Write + Seek> Seek for BufWriter<W> {
     ) -> Poll<io::Result<u64>> {
         ready!(self.as_mut().poll_flush_buf(cx))?;
         self.get_pin_mut().poll_seek(cx, pos)
+    }
+}
+
+impl<W: Write + Read> Read for BufWriter<W> {
+    fn poll_read(
+        self: Pin<&mut Self>,
+        cx: &mut Context,
+        buf: &mut [u8]
+    ) -> Poll<io::Result<usize>> {
+        self.get_pin_mut().poll_read(cx, buf)
     }
 }

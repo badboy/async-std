@@ -4,7 +4,7 @@ use std::{cmp, fmt};
 
 use pin_project_lite::pin_project;
 
-use crate::io::{self, BufRead, Read, Seek, SeekFrom, DEFAULT_BUF_SIZE};
+use crate::io::{self, BufRead, Read, Seek, SeekFrom, Write, DEFAULT_BUF_SIZE};
 use crate::task::{Context, Poll};
 
 pin_project! {
@@ -331,5 +331,29 @@ impl<R: Seek> Seek for BufReader<R> {
         }
         self.discard_buffer();
         Poll::Ready(Ok(result))
+    }
+}
+
+impl<W: Write + Read> Write for BufReader<W> {
+    fn poll_write(
+        self: Pin<&mut Self>,
+        cx: &mut Context,
+        buf: &[u8]
+    ) -> Poll<io::Result<usize>> {
+        self.get_pin_mut().poll_write(cx, buf)
+    }
+
+    fn poll_flush(
+        self: Pin<&mut Self>,
+        cx: &mut Context
+    ) -> Poll<io::Result<()>> {
+        self.get_pin_mut().poll_flush(cx)
+    }
+
+    fn poll_close(
+        self: Pin<&mut Self>,
+        cx: &mut Context
+    ) -> Poll<io::Result<()>> {
+        self.get_pin_mut().poll_close(cx)
     }
 }
